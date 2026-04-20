@@ -1,4 +1,4 @@
-# ⚡ Mini cuBLAS: GPU-Accelerated Linear Algebra & Interactive Visualizer
+#  Mini cuBLAS: GPU-Accelerated Linear Algebra & Interactive Visualizer
 
 ![CUDA](https://img.shields.io/badge/CUDA-12.0-green)
 ![Python](https://img.shields.io/badge/Python-3.10+-blue)
@@ -11,7 +11,7 @@ Instead of a static C++ wrapper, this project pairs a high-performance CUDA kern
 
 ---
 
-## 🧠 Project Philosophy
+##  Project Philosophy
 
 This project is designed to answer the question: *"What is actually happening inside `torch.matmul`?"*
 
@@ -24,30 +24,30 @@ By building:
 
 ---
 
-## 🖥️ The Visualizer Suite (Powered by Streamlit + pybind11)
+##  The Visualizer Suite (Powered by Streamlit + pybind11)
 
 The non-GPU portion is a dynamic web application. It interacts directly with your compiled CUDA binaries via **pybind11**, offering four interactive pages:
 
-### 1. 🎬 Tiling Simulator
+### 1.  Tiling Simulator
 - **Step-through animation** of the tiled `SGEMM` algorithm.
 - Renders matrices A, B, and C as color-coded grids.
 - **Live Highlighting:** Shows the active tile currently residing in `__shared__` memory.
 - **Performance Counter:** Displays a real-time counter comparing **Global Memory Reads (Naive)** vs **Global Memory Reads (Tiled)**. See the 16x reduction happen frame-by-frame.
 
-### 2. 🗺️ Memory Hierarchy Explorer
+### 2.  Memory Hierarchy Explorer
 - Interactive diagram of GPU architecture: Registers → Shared Memory → L1/L2 Cache → Global Memory (DRAM).
 - **Heatmap Comparison:** Visualizes memory access patterns per tile. Green for coalesced access, Red for strided/bank-conflicted access.
 
-### 3. 📊 Benchmark Dashboard
+### 3.  Benchmark Dashboard
 - **Live GFLOPS Chart:** Select matrix sizes (256 → 8192) and watch the performance curve update.
 - **Multi-Engine Comparison:** Plots four lines on the same graph:
-  - 🐌 CPU (NumPy)
-  - 🚶 Naive GPU
-  - 🏃 Tiled GPU (Your Implementation)
-  - 🚀 cuBLAS (NVIDIA's Official)
+  -  CPU (NumPy)
+  -  Naive GPU
+  -  Tiled GPU (Your Implementation)
+  -  cuBLAS (NVIDIA's Official)
 - **Speedup Metrics:** Auto-calculates the multiple improvement from Naive to Tiled vs. the Peak Hardware Theoretical Limit.
 
-### 4. 🧮 Operation Explorer
+### 4.  Operation Explorer
 - **Interactive REPL:** Enter custom small matrices (e.g., 4x4).
 - **Supported Ops:** `MatMul`, `Transpose`, `Element-wise Add`, `Dot Product`.
 - **Kernel Metadata Inspector:** Displays launch configuration (Grid/Block dims) and estimated memory traffic for the selected operation.
@@ -66,7 +66,7 @@ The non-GPU portion is a dynamic web application. It interacts directly with you
 
 ---
 
-## 📦 Installation & Setup
+##  Installation & Setup
 
 ### Prerequisites
 - NVIDIA GPU (Compute Capability 6.0+)

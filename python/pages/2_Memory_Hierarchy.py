@@ -147,4 +147,28 @@ with col_tiled:
     st.success(f"Each element accessed only **{num_phases}x** - "
                f"**{tile_size}x reduction!**")
 
+# ============================================================================
+# Key Concepts
+# ============================================================================
+st.markdown("---")
+st.markdown("""
+### Key Concepts
+
+| Concept | Description |
+|---------|-------------|
+| **Memory Coalescing** | Consecutive threads access consecutive memory addresses -> single 128-byte transaction per warp |
+| **Shared Memory** | Fast on-chip SRAM (~20 cycles latency). Tiles of A and B are loaded here for reuse |
+| **Bank Conflicts** | Shared memory has 32 banks. Column-wise access causes conflicts. **Fix: +1 padding** |
+| **`__syncthreads()`** | Barrier ensuring all threads in a block have finished loading before computation |
+| **Warp Shuffle** | `__shfl_down_sync()` - register-level communication within a warp (0 latency vs shared memory) |
+
+### Memory Traffic Formula
+
+| Method | Global Memory Reads | Formula |
+|--------|-------------------|---------|
+| **Naive** | 2 x M x N x K | Every element loaded from DRAM for each output |
+| **Tiled** | 2 x M x N x K / T | Tile loaded once into shared memory, reused T times |
+| **Reduction** | **Tx** fewer reads | Where T = tile size (16 or 32) |
+""")
+
 st.caption("Mini cuBLAS - Memory Hierarchy Explorer - Abdul Wasay")

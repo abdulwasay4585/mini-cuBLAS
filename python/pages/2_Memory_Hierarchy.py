@@ -3,11 +3,13 @@ Page 2 - Memory Hierarchy Explorer
 ====================================
 - Interactive diagram of GPU memory hierarchy:
   Registers -> Shared Memory -> L1/L2 Cache -> Global Memory (DRAM)
+- Heatmap comparison of naive vs tiled access patterns per tile
 """
 
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 from matplotlib.patches import FancyBboxPatch
 
 st.set_page_config(page_title="Memory Hierarchy", page_icon="", layout="wide")
@@ -28,6 +30,7 @@ ax.set_aspect('equal')
 ax.axis('off')
 fig_hier.patch.set_facecolor('#0e1117')
 
+# Hierarchy levels (bottom = slowest/largest, top = fastest/smallest)
 levels = [
     {"y": 0.5, "h": 1.2, "label": "Global Memory (DRAM)", "size": "12 GB",
      "bw": "~288 GB/s", "latency": "~400-600 cycles", "color": "#e74c3c"},
@@ -40,7 +43,7 @@ levels = [
 ]
 
 for lvl in levels:
-    width = 10 - lvl["y"] * 0.8
+    width = 10 - lvl["y"] * 0.8  # narrower at top
     x = (12 - width) / 2
     rect = FancyBboxPatch((x, lvl["y"]), width, lvl["h"],
                           boxstyle="round,pad=0.1",
@@ -53,6 +56,18 @@ for lvl in levels:
     ax.text(6, lvl["y"] + lvl["h"] / 2 - 0.25,
             f'{lvl["size"]}  |  {lvl["bw"]}  |  {lvl["latency"]}',
             ha='center', va='center', fontsize=9, color='#cccccc')
+
+# Arrows
+for i in range(len(levels) - 1):
+    y_start = levels[i]["y"] + levels[i]["h"]
+    y_end = levels[i + 1]["y"]
+    ax.annotate('', xy=(6, y_end), xytext=(6, y_start),
+                arrowprops=dict(arrowstyle='->', color='white', lw=2))
+
+ax.text(6, 7.3, "FASTER / SMALLER ->", ha='center', fontsize=11,
+        color='#3498db', fontweight='bold')
+ax.text(6, 0.1, "SLOWER / LARGER ->", ha='center', fontsize=11,
+        color='#e74c3c', fontweight='bold')
 
 st.pyplot(fig_hier)
 plt.close(fig_hier)

@@ -115,5 +115,37 @@ with col_c:
     fig_c = draw_matrix_with_tile(C, f"C - Output tile ({row_tile}, {col_tile})",
                                    row_tile, col_tile, tile_size, 'Greens')
     st.pyplot(fig_c)
+    plt.close(fig_c)
+
+# --- Shared Memory View ---
+st.markdown("---")
+st.markdown("### Current Shared Memory Contents")
+
+sA = A[row_tile*tile_size:(row_tile+1)*tile_size,
+       k_tile*tile_size:(k_tile+1)*tile_size]
+sB = B[k_tile*tile_size:(k_tile+1)*tile_size,
+       col_tile*tile_size:(col_tile+1)*tile_size]
+
+col_sa, col_sb = st.columns(2)
+with col_sa:
+    st.markdown(f"**`__shared__ sA[{tile_size}][{tile_size}]`** (from A)")
+    fig_sa, ax_sa = plt.subplots(figsize=(3, 3))
+    ax_sa.imshow(sA, cmap='Blues', aspect='equal')
+    for i in range(sA.shape[0]):
+        for j in range(sA.shape[1]):
+            ax_sa.text(j, i, f"{sA[i,j]:.0f}", ha='center', va='center', fontsize=12)
+    ax_sa.set_title("Shared Memory Tile A", fontsize=10)
+    st.pyplot(fig_sa)
+    plt.close(fig_sa)
+
+with col_sb:
+    st.markdown(f"**`__shared__ sB[{tile_size}][{tile_size}]`** (from B)")
+    fig_sb, ax_sb = plt.subplots(figsize=(3, 3))
+    ax_sb.imshow(sB, cmap='Oranges', aspect='equal')
+    for i in range(sB.shape[0]):
+        for j in range(sB.shape[1]):
+            ax_sb.text(j, i, f"{sB[i,j]:.0f}", ha='center', va='center', fontsize=12)
+    ax_sb.set_title("Shared Memory Tile B", fontsize=10)
+    st.pyplot(fig_sb)
 
 st.caption("Mini cuBLAS - Tiling Simulator - Abdul Wasay")

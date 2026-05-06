@@ -147,5 +147,20 @@ with col_sb:
             ax_sb.text(j, i, f"{sB[i,j]:.0f}", ha='center', va='center', fontsize=12)
     ax_sb.set_title("Shared Memory Tile B", fontsize=10)
     st.pyplot(fig_sb)
+    plt.close(fig_sb)
+
+# --- Explanation ---
+st.markdown("---")
+st.markdown(f"""
+### At Step {step}
+
+1. **Thread block** at output position `({row_tile}, {col_tile})` is computing tile `k={k_tile}` of {num_tiles}
+2. **Loading into shared memory:**
+   - `sA` <- `A[{row_tile*tile_size}:{(row_tile+1)*tile_size}, {k_tile*tile_size}:{(k_tile+1)*tile_size}]`
+   - `sB` <- `B[{k_tile*tile_size}:{(k_tile+1)*tile_size}, {col_tile*tile_size}:{(col_tile+1)*tile_size}]`
+3. **`__syncthreads()`** - barrier ensures all threads finished loading
+4. **Accumulate:** each thread computes `sum += sA[ty][k] * sB[k][tx]` for `k = 0..{tile_size-1}`
+5. **`__syncthreads()`** - barrier before next tile overwrites shared memory
+""")
 
 st.caption("Mini cuBLAS - Tiling Simulator - Abdul Wasay")

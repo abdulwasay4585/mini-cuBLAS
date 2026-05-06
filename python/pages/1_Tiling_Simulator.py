@@ -4,6 +4,7 @@ Page 1 - Tiling Simulator
 Step-through animation of the tiled matrix multiplication algorithm.
 - Renders matrices A, B, C as colour-coded grids
 - Highlights the active tile currently in shared memory
+- Shows a live counter comparing global memory reads: naive vs tiled
 """
 
 import streamlit as st
@@ -32,11 +33,87 @@ with col3:
 np.random.seed(42)
 A = np.random.randint(0, 10, (mat_size, mat_size)).astype(np.float32)
 B = np.random.randint(0, 10, (mat_size, mat_size)).astype(np.float32)
-C = A @ B
+C = A @ B  # Ground truth
 
 num_tiles = mat_size // tile_size
 
-st.write(f"Matrix size: {mat_size}x{mat_size}, Tile size: {tile_size}x{tile_size}")
-st.write(f"Number of tiles per dimension: {num_tiles}")
+# --- Tile step slider ---
+total_steps = num_tiles * num_tiles * num_tiles  # (row_tile, col_tile, k_tile)
+step = st.slider("Step (tile phase)", 0, total_steps - 1, 0,
+                 help="Each step corresponds to one tile being loaded into shared memory")
+
+# Decode step into (output tile row, output tile col, k-tile)
+k_tile = step % num_tiles
+remaining = step // num_tiles
+col_tile = remaining % num_tiles
+row_tile = remaining // num_tiles
+
+# --- Memory read counters ---
+N = mat_size
+T = tile_size
+naive_reads = 2 * N * N * N  # 2*M*N*K for naive
+# For tiled: up to current step
+current_tile_step = step + 1
+tiled_reads_so_far = current_tile_step * 2 * T * T  # each tile loads T*T from A and T*T from B
+tiled_total = 2 * N * N * N // T  # total tiled reads
+
+col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+col_m1.metric("Current Tile", f"({row_tile}, {col_tile}, k={k_tile})")
+col_m2.metric("Naive Global Reads", f"{naive_reads:,}")
+col_m3.metric("Tiled Reads (so far)", f"{tiled_reads_so_far:,}")
+col_m4.metric("Reduction Factor", f"{T}x")
+
+st.markdown("---")
+
+# --- Visualization ---
+def draw_matrix_with_tile(matrix, title, highlight_row, highlight_col, tile_sz, cmap='YlOrRd'):
+    """Draw a matrix as a color grid with a highlighted tile region."""
+    fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+    ax.imshow(matrix, cmap=cmap, aspect='equal')
+
+    # Add cell values
+    for i in range(matrix.shape[0]):
+        for j in range(matrix.shape[1]):
+            val = matrix[i, j]
+            ax.text(j, i, f"{val:.0f}" if val == int(val) else f"{val:.1f}",
+                    ha='center', va='center', fontsize=8,
+                    color='white' if val > matrix.max() * 0.6 else 'black')
+
+    # Highlight tile
+    if highlight_row is not None and highlight_col is not None:
+        rect = patches.Rectangle(
+            (highlight_col * tile_sz - 0.5, highlight_row * tile_sz - 0.5),
+            tile_sz, tile_sz,
+            linewidth=3, edgecolor='#00ff00', facecolor='none', linestyle='--'
+        )
+        ax.add_patch(rect)
+
+    ax.set_title(title, fontsize=14, fontweight='bold')
+    ax.set_xticks(range(matrix.shape[1]))
+    ax.set_yticks(range(matrix.shape[0]))
+    ax.grid(True, alpha=0.3)
+    return fig
+
+col_a, col_b, col_c = st.columns(3)
+
+with col_a:
+    st.markdown("### Matrix A")
+    fig_a = draw_matrix_with_tile(A, f"A - Tile row={row_tile}, k={k_tile}",
+                                   row_tile, k_tile, tile_size, 'Blues')
+    st.pyplot(fig_a)
+    plt.close(fig_a)
+
+with col_b:
+    st.markdown("### Matrix B")
+    fig_b = draw_matrix_with_tile(B, f"B - Tile k={k_tile}, col={col_tile}",
+                                   k_tile, col_tile, tile_size, 'Oranges')
+    st.pyplot(fig_b)
+    plt.close(fig_b)
+
+with col_c:
+    st.markdown("### Result C = A x B")
+    fig_c = draw_matrix_with_tile(C, f"C - Output tile ({row_tile}, {col_tile})",
+                                   row_tile, col_tile, tile_size, 'Greens')
+    st.pyplot(fig_c)
 
 st.caption("Mini cuBLAS - Tiling Simulator - Abdul Wasay")

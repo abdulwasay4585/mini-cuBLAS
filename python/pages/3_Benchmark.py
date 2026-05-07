@@ -117,5 +117,56 @@ if st.button("Run Benchmark", type="primary", use_container_width=True):
         progress.empty()
 
         st.session_state['bench_results'] = results
+        st.session_state['bench_operation'] = operation
+
+# --- Display Results ---
+if 'bench_results' in st.session_state:
+    results = st.session_state['bench_results']
+    operation = st.session_state.get('bench_operation', "Matrix Multiplication (SGEMM)")
+    sizes_done = [r['Size'] for r in results]
+
+    if operation == "Matrix Multiplication (SGEMM)":
+        # Extract GFLOPS
+        cpu_gflops = [r.get('cpu_numpy_gflops', 0) for r in results]
+        naive_gflops = [r.get('naive_gflops', 0) for r in results]
+        tiled16_gflops = [r.get('tiled16_gflops', 0) for r in results]
+        tiled32_gflops = [r.get('tiled32_gflops', 0) for r in results]
+        cublas_gflops = [r.get('cublas_gflops', 0) for r in results]
+
+        # --- GFLOPS Chart ---
+        st.markdown(f"### GFLOPS Performance Comparison: {operation}")
+
+        fig, ax = plt.subplots(figsize=(12, 6))
+        fig.patch.set_facecolor('#0e1117')
+        ax.set_facecolor('#1a1a2e')
+
+        x = np.arange(len(sizes_done))
+        width = 0.15
+
+        bars_cpu = ax.bar(x - 2*width, cpu_gflops, width, label='CPU (NumPy)',
+                          color='#95a5a6', alpha=0.9, edgecolor='white', linewidth=0.5)
+        bars_naive = ax.bar(x - width, naive_gflops, width, label='Naive GPU',
+                            color='#e74c3c', alpha=0.9, edgecolor='white', linewidth=0.5)
+        bars_t16 = ax.bar(x, tiled16_gflops, width, label='Tiled 16x16',
+                          color='#3498db', alpha=0.9, edgecolor='white', linewidth=0.5)
+        bars_t32 = ax.bar(x + width, tiled32_gflops, width, label='Tiled 32x32',
+                          color='#2ecc71', alpha=0.9, edgecolor='white', linewidth=0.5)
+        bars_cb = ax.bar(x + 2*width, cublas_gflops, width, label='cuBLAS',
+                         color='#f39c12', alpha=0.9, edgecolor='white', linewidth=0.5)
+
+        ax.set_xlabel('Matrix Size (NxN)', fontsize=12, color='white')
+        ax.set_ylabel('GFLOPS', fontsize=12, color='white')
+        ax.set_title('Matrix Multiplication Performance', fontsize=14,
+                     fontweight='bold', color='white')
+        ax.set_xticks(x)
+        ax.set_xticklabels([f'{s}x{s}' for s in sizes_done], color='white')
+        ax.tick_params(colors='white')
+        ax.legend(loc='upper left', fontsize=10)
+        ax.grid(axis='y', alpha=0.2)
+
+        st.pyplot(fig)
+
+else:
+    st.info("Click **Run Benchmark** to start profiling")
 
 st.caption("Mini cuBLAS - Benchmark Dashboard - Abdul Wasay")

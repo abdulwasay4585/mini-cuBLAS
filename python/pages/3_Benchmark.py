@@ -165,8 +165,136 @@ if 'bench_results' in st.session_state:
         ax.grid(axis='y', alpha=0.2)
 
         st.pyplot(fig)
+        plt.close(fig)
+
+        # --- Line Chart ---
+        st.markdown("### Performance Scaling")
+
+        fig2, ax2 = plt.subplots(figsize=(12, 5))
+        fig2.patch.set_facecolor('#0e1117')
+        ax2.set_facecolor('#1a1a2e')
+
+        ax2.plot(sizes_done, cpu_gflops, 'o-', label='CPU (NumPy)', color='#95a5a6',
+                 linewidth=2, markersize=8)
+        ax2.plot(sizes_done, naive_gflops, 's-', label='Naive GPU', color='#e74c3c',
+                 linewidth=2, markersize=8)
+        ax2.plot(sizes_done, tiled16_gflops, '^-', label='Tiled 16x16', color='#3498db',
+                 linewidth=2, markersize=8)
+        ax2.plot(sizes_done, tiled32_gflops, 'D-', label='Tiled 32x32', color='#2ecc71',
+                 linewidth=2, markersize=8)
+        ax2.plot(sizes_done, cublas_gflops, '*-', label='cuBLAS', color='#f39c12',
+                 linewidth=2, markersize=10)
+
+        ax2.set_xlabel('Matrix Size (N)', fontsize=12, color='white')
+        ax2.set_ylabel('GFLOPS', fontsize=12, color='white')
+        ax2.set_title('GFLOPS vs Matrix Size', fontsize=14, fontweight='bold', color='white')
+        ax2.tick_params(colors='white')
+        ax2.legend(fontsize=10)
+        ax2.grid(alpha=0.2)
+
+        st.pyplot(fig2)
+        plt.close(fig2)
+
+        # --- Speedup Table ---
+        st.markdown("### Speedup Table")
+        st.markdown("*Speedup relative to CPU (NumPy)*")
+
+        table_data = []
+        for i, r in enumerate(results):
+            cpu = r.get('cpu_numpy_gflops', 1)
+            if cpu == 0:
+                cpu = 1
+            row = {
+                "Matrix Size": f"{r['Size']}x{r['Size']}",
+                "CPU (GFLOPS)": f"{cpu:.1f}",
+                "Naive GPU": f"{r.get('naive_gflops', 0):.1f} ({r.get('naive_gflops', 0)/cpu:.1f}x)",
+                "Tiled 16x16": f"{r.get('tiled16_gflops', 0):.1f} ({r.get('tiled16_gflops', 0)/cpu:.1f}x)",
+                "Tiled 32x32": f"{r.get('tiled32_gflops', 0):.1f} ({r.get('tiled32_gflops', 0)/cpu:.1f}x)",
+                "cuBLAS": f"{r.get('cublas_gflops', 0):.1f} ({r.get('cublas_gflops', 0)/cpu:.1f}x)",
+            }
+            table_data.append(row)
+
+        st.table(table_data)
+
+        # --- Timing Table ---
+        st.markdown("### Execution Time (ms)")
+        timing_data = []
+        for r in results:
+            timing_data.append({
+                "Size": f"{r['Size']}x{r['Size']}",
+                "CPU (ms)": f"{r.get('cpu_numpy_ms', 0):.2f}",
+                "Naive (ms)": f"{r.get('naive_ms', 0):.3f}",
+                "Tiled 16 (ms)": f"{r.get('tiled16_ms', 0):.3f}",
+                "Tiled 32 (ms)": f"{r.get('tiled32_ms', 0):.3f}",
+                "cuBLAS (ms)": f"{r.get('cublas_ms', 0):.3f}",
+            })
+        st.table(timing_data)
+
+    else:
+        # Non-SGEMM metrics (Execution Time instead of GFLOPS)
+        cpu_ms = [r.get('cpu_numpy_ms', 0) for r in results]
+        gpu_ms = [r.get('gpu_ms', 0) for r in results]
+
+        st.markdown(f"### Execution Time Comparison: {operation}")
+
+        fig, ax = plt.subplots(figsize=(10, 5))
+        fig.patch.set_facecolor('#0e1117')
+        ax.set_facecolor('#1a1a2e')
+
+        x = np.arange(len(sizes_done))
+        width = 0.35
+
+        ax.bar(x - width/2, cpu_ms, width, label='CPU (NumPy)',
+               color='#95a5a6', alpha=0.9, edgecolor='white', linewidth=0.5)
+        ax.bar(x + width/2, gpu_ms, width, label='GPU Kernel',
+               color='#2ecc71', alpha=0.9, edgecolor='white', linewidth=0.5)
+
+        ax.set_xlabel('Size (N)', fontsize=12, color='white')
+        ax.set_ylabel('Execution Time (ms) - Lower is Better', fontsize=12, color='white')
+        ax.set_title(f'{operation} Performance', fontsize=14, fontweight='bold', color='white')
+        ax.set_xticks(x)
+        ax.set_xticklabels([f'{s}' for s in sizes_done], color='white')
+        ax.tick_params(colors='white')
+        ax.legend(loc='upper left', fontsize=10)
+        ax.grid(axis='y', alpha=0.2)
+
+        st.pyplot(fig)
+        plt.close(fig)
+
+        st.markdown("### Speedup Table")
+        table_data = []
+        for r in results:
+            cpu_t = r.get('cpu_numpy_ms', 1)
+            gpu_t = r.get('gpu_ms', 1)
+            if gpu_t == 0: gpu_t = 0.001
+            speedup = cpu_t / gpu_t
+            
+            row = {
+                "Size (N)": f"{r['Size']}",
+                "CPU Time (ms)": f"{cpu_t:.4f}",
+                "GPU Time (ms)": f"{gpu_t:.4f}",
+                "Speedup vs CPU": f"{speedup:.1f}x"
+            }
+            table_data.append(row)
+
+        st.table(table_data)
 
 else:
     st.info("Click **Run Benchmark** to start profiling")
+
+    # Show expected results
+    st.markdown("""
+    ### Expected Results (RTX A2000 12GB)
+
+    | Implementation | Expected GFLOPS | Speedup vs CPU |
+    |---|---|---|
+    | CPU NumPy (OpenBLAS) | 50-200 | 1x |
+    | Naive GPU | 200-500 | ~3x |
+    | Tiled GPU (16x16) | 2,000-5,000 | ~25x |
+    | Tiled GPU (32x32) | 4,000-8,000 | ~50x |
+    | cuBLAS | 10,000-15,000 | ~100x |
+
+    **GFLOPS Formula:** `GFLOPS = 2 x M x K x N / (t_kernel x 10⁹)`
+    """)
 
 st.caption("Mini cuBLAS - Benchmark Dashboard - Abdul Wasay")

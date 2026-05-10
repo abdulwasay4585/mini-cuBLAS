@@ -1,10 +1,3 @@
-# ============================================================================
-# Performance Notes (May 9):
-#   - Tested with SM 8.6 (RTX A2000 Ampere)
-#   - --use_fast_math provides ~15% speedup on tiled SGEMM
-#   - -O3 enables aggressive inlining of small device functions
-# ============================================================================
-
 cmake_minimum_required(VERSION 3.18)
 project(mini_cublas LANGUAGES CXX CUDA)
 

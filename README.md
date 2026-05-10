@@ -60,3 +60,23 @@ Once the code is built, you can start the visualizer!
 
 ## Conclusion
 This project demonstrates how to bridge the gap between extremely fast, complex hardware programming and easy, accessible Python web development.
+
+## Quick Start Commands
+
+```bash
+# Clone and build
+git clone https://github.com/abdulwasay4585/mini-cuBLAS.git
+cd mini-cuBLAS
+mkdir build && cd build
+cmake ..
+make -j$(nproc)
+export PYTHONPATH=$(pwd):$PYTHONPATH
+
+# Run tests
+cd ..
+pytest test/test_correctness.py -v
+
+# Launch visualizer
+pip install streamlit plotly matplotlib numpy
+streamlit run python/app.py
+```
